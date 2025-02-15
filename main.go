@@ -21,18 +21,36 @@ func main() {
 	}
 
 	fmt.Println("Starting GitHub Actions Simulation...")
-	for jobName, job := range config.Jobs {
-		fmt.Printf("\nRunning job: %s\n", jobName)
+	for _, job := range config.Jobs {
+		fmt.Printf("\nRunning job: %s\n", job.Name)
+
+		// Start services
 		for serviceName, service := range job.Services {
-			fmt.Printf("Starting service: %s (Image: %s)\n", serviceName, service.Image)
-			// Simulate service startup (implement actual logic if needed)
-		}
-		for _, step := range job.Steps {
-			fmt.Printf("Running step: %s\n", step.Name)
-			if err := executor.ExecuteStep(step); err != nil {
-				log.Fatalf("Step failed: %s, Error: %v", step.Name, err)
+			err := executor.StartService(serviceName, service)
+			if err != nil {
+				log.Fatalf("Failed to start service %s: %v", serviceName, err)
 			}
 		}
+
+		// Execute steps
+		for _, step := range job.Steps {
+			if err := executor.ExecuteStep(step); err != nil {
+				log.Printf("> Step failed: %s, Error: %v", step.Name, err)
+				executor.CleanData()
+				log.Fatal("Exiting due to failure.")
+			}
+		}
+
+		// Stop services
+		for serviceName := range job.Services {
+			_ = executor.StopService(serviceName)
+		}
 	}
-	fmt.Println("\nSimulation complete.")
+	
+	exitStatus := executor.CleanData()
+	if exitStatus != nil {
+		fmt.Printf("\nSimulation complete (Error: %s).\n", exitStatus.Error())
+	} else {
+		fmt.Println("\nSimulation complete (Success).")
+	}
 }

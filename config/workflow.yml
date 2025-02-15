@@ -1,0 +1,19 @@
+jobs:
+  - name: Simple Workflow
+    services:
+      postgres:
+        image: postgres:latest
+        ports:
+          - "5432:5432"
+    steps:
+      - name: Checkout code
+        run: echo "Checking out code..."
+      - name: Echo environment variables
+        run: |
+          echo "DB_HOST=$DB_HOST"
+          echo "DB_PORT=$DB_PORT"
+          echo "Printing all environment variables:"
+          printenv
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
